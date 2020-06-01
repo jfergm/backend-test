@@ -11,7 +11,12 @@ connection.authenticate()
     console.error('Unable to connect to the database:', err)
   })
 
-app.get('/', (req, res) => res.send('Hello World!'))
+app.use(express.json())
+app.use(express.urlencoded())
+
+const userRoutes = require('./routes/user')
+
+app.use('/api/users', userRoutes)
 
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!')
