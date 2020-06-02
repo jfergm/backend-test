@@ -3,6 +3,7 @@ const router = express.Router()
 const Task = require('../models/task')
 const User = require('../models/user')
 const Op = require('sequelize').Op
+const { check, validationResult } = require('express-validator');
 
 router.route('/')
   .get(async (req, res, next) => {
@@ -125,7 +126,18 @@ router.route('/')
       console.log(e)
     }
   })
-  .post(async (req, res, next) => {
+  .post([
+    check('name').isString().isLength({ min: 2 }),
+    check('description').isString().isLength( { min: 2 }),
+    check('score').isInt(),
+    check('status').isString.isIn(['active','inactive','declined','completed']),
+    check('user_id').isInt({ min: 1}),
+    check('project_id').isInt({ min: 1})
+  ],async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({ errors: errors.array() });
+    }
     try {
       let newTask = Task.create({
         ...req.body
