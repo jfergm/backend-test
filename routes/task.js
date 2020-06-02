@@ -1,35 +1,18 @@
 const express = require('express')
 const router = express.Router()
-const Project = require('../models/project')
-const Op = require('sequelize').Op
-const User = require('../models/user')
 const Task = require('../models/task')
+const User = require('../models/user')
+const Op = require('sequelize').Op
 
 router.route('/')
   .get(async (req, res, next) => {
     try {
-      let {name, description, status, assigner, assignees, taskScore, perPage = 10, page = 1} = req.query
+      let {name, description, assigner, assignees, status, score, perPage = 10, page = 1} = req.query
 
-      let whereClause = {
-      }
+      let whereClause = {}
 
-      // where name = name
       name ? whereClause.name = name : null
-
-      // where surname = surname
-      description ? whereClause.body = description : null
-      
-      if(status) {
-        statusArray = JSON.parse(status)
-        let or = []
-        statusArray.forEach(status => {
-          
-          or.push({status})
-        })
-
-        // where (status = status or status = status)
-        whereClause[Op.or] = or
-      }
+      description ? whereClause.description = description : null
 
       if(assigner) {
         let assignerUsers = await User.findAll({
@@ -44,9 +27,22 @@ router.route('/')
           userIDs.push(assignerUser.getDataValue('id'))
         })
 
-        //where user_id in (user_id, user_id)
-        whereClause.user_id = {
-          [Op.in]: userIDs
+        let projects = Project.findAll({
+          where: {
+            user_id: {
+              [Op.in]: userIDs
+            }
+          }
+        })
+
+        let projectIDs = new Set()
+
+        projects.forEach(project => {
+          projectIDs.add(project.getDataValue('id'))
+        })
+
+        whereClause.project_id = {
+          [Op.in]: Array.from(projectIDs)
         }
       }
 
@@ -91,69 +87,51 @@ router.route('/')
           userIDs.push(assigneesUser.getDataValue('id'))
         })
 
-        let tasks = await Task.findAll({
-          where: {
-            user_id: {
-              [Op.in] : userIDs
-            }
-          }
-        })
-
-        let projectIDs = new Set()
-
-        tasks.forEach(task => {
-          projectIDs.add(task.getDataValue('project_id'))
-        })
-
-        //where id in (id, id)
-        whereClause.id = {
-          [Op.in]: Array.from(projectIDs)
+        whereClause.user_id = {
+          [Op.in]: userIDs
         }
       }
 
-      if(taskScore) {
-        let tasks = await Task.findAll({
-          where: {
-            score: {
-              [Op.gt]: taskScore
-            }
-          }
+      if(status) {
+        statusArray = JSON.parse(status)
+        let or = []
+        statusArray.forEach(status => {
+          or.push({status})
         })
 
-        let projectIDs = new Set()
+        whereClause[Op.or] = or
+      }
 
-        tasks.forEach(task => {
-          projectIDs.add(task.getDataValue('project_id'))
-        })
-
-        //where id in (id, id)
-        whereClause.id = {
-          [Op.in]: Array.from(projectIDs)
+      if(score) {
+        whereClause.score = {
+          [Op.gt]: score
         }
       }
 
-      let projects = await Project.findAll({
-        where: whereClause,
-        limit: perPage,
-        offset: (page - 1) * perPage
-      })
+      let tasks = await Task.findAll({
+        limit: 10, 
+        offset: (page - 1) * perPage,
+        where: whereClause
+      }) 
 
       let response = {
         perPage,
         page,
-        data: projects
+        data: tasks
       }
+
       res.send(response)
     } catch(e) {
+      console.log(e)
     }
   })
   .post(async (req, res, next) => {
     try {
-      let newProject = await Project.create({
+      let newTask = Task.create({
         ...req.body
       })
 
-      res.send(newProject)
+      res.send(newTask)
     } catch(e) {
 
     }

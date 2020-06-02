@@ -16,9 +16,11 @@ app.use(express.urlencoded())
 
 const userRoutes = require('./routes/user')
 const projectRoutes = require('./routes/project')
+const taskRoutes = require('./routes/task')
 
 app.use('/api/users', userRoutes)
 app.use('/api/projects', projectRoutes)
+app.use('/api/tasks', taskRoutes)
 
 app.listen(3000, function () {
   console.log('Example app listening on port 3000!')
