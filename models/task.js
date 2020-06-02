@@ -17,9 +17,16 @@ Task.init({
   status: {
     type: sequelize.ENUM,
     values: ['active', 'inactive','declined', 'completed']
+  },
+  user_id: {
+    type: sequelize.INTEGER
+  },
+  project_id: {
+    type: sequelize.INTEGER
   }
 
 }, {
+  underscored: true,
   sequelize: connection,
   modelName: 'task'
 })
