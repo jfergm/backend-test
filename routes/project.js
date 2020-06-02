@@ -138,6 +138,20 @@ router.route('/')
         offset: (page - 1) * perPage
       })
 
+      for(let i = 0; i < projects.length; i++) {
+        let sumScores = 0
+        let tasks = await Task.findAll({
+          where: {
+            project_id: projects[i].getDataValue('id')
+          }
+        })
+        tasks.forEach(task => {
+          sumScores+=task.getDataValue('score')
+        })
+        console.log(sumScores / tasks.length)
+        projects[i].set('averageScore', sumScores / tasks.length, {raw: true})
+      }
+
       let response = {
         perPage,
         page,
@@ -145,6 +159,7 @@ router.route('/')
       }
       res.send(response)
     } catch(e) {
+      console.log(e)
     }
   })
   .post(async (req, res, next) => {
